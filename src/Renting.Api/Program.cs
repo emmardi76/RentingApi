@@ -1,39 +1,56 @@
+using Microsoft.EntityFrameworkCore;
+using Renting.Infrastructure.Persistence;
+using Renting.Infrastructure.Repositories;
+using Renting.Application.Interfaces;
+using MediatR;
+using Microsoft.OpenApi.Models;
+using Renting.Api.Middleware;
+using Renting.Api.HealthChecks;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+// Configuration
+var connectionString = builder.Configuration.GetConnectionString("RentingDatabase")
+    ?? builder.Configuration["ConnectionStrings:RentingDatabase"]
+    ?? "Host=postgres;Database=renting_db;Username=renting_user;Password=renting_pass";
+
+// Services
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Renting API", Version = "v1" });
+});
+
+// DbContext
+builder.Services.AddDbContext<RentingDbContext>(options =>
+    options.UseNpgsql(connectionString));
+
+// AutoMapper & MediatR
+builder.Services.AddAutoMapper(typeof(Program));
+builder.Services.AddMediatR(typeof(Program).Assembly);
+
+// Repositories (interfaces in Application, implementations in Infrastructure)
+builder.Services.AddScoped<IVehicleRepository, VehicleRepository>();
+builder.Services.AddScoped<IRentalRepository, RentalRepository>();
+
+// Health checks: usar el healthcheck personalizado que consulta RentingDbContext
+builder.Services.AddHealthChecks()
+    .AddCheck<DatabaseHealthCheck>("postgresql");
+
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Middleware
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Renting API v1"));
 }
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+app.MapControllers();
+app.MapHealthChecks("/health");
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
