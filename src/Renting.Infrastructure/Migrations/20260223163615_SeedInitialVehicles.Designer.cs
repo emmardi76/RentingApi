@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Renting.Infrastructure.Persistence;
@@ -11,9 +12,11 @@ using Renting.Infrastructure.Persistence;
 namespace Renting.Infrastructure.Migrations
 {
     [DbContext(typeof(RentingDbContext))]
-    partial class RentingDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260223163615_SeedInitialVehicles")]
+    partial class SeedInitialVehicles
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
