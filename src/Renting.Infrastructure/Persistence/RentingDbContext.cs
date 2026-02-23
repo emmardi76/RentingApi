@@ -30,7 +30,14 @@ namespace Renting.Infrastructure.Persistence
             {
                 b.HasKey(r => r.Id);
                 b.Property(r => r.CustomerId).HasMaxLength(100).IsRequired();
-                b.Property(r => r.StartDate).IsRequired();
+                
+                // ✅ Forzar timestamp sin zona horaria
+                b.Property(r => r.StartDate)
+                    .IsRequired()
+                    .HasColumnType("timestamp without time zone");
+                
+                b.Property(r => r.EndDate)
+                    .HasColumnType("timestamp without time zone");
             });
         }
     }

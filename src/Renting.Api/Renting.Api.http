@@ -1,6 +1,0 @@
-@Renting.Api_HostAddress = http://localhost:5111
-
-GET {{Renting.Api_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###
