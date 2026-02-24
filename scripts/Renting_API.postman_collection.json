@@ -1,0 +1,388 @@
+{
+	"info": {
+		"_postman_id": "renting-api-collection",
+		"name": "Renting API",
+		"description": "API para gestión de alquiler de vehículos - Arquitectura Hexagonal + DDD + CQRS",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Vehicles",
+			"item": [
+			{
+				"name": "Create Vehicle",
+				"event": [
+					{
+						"listen": "test",
+						"script": {
+							"exec": [
+								"pm.test(\"Status code is 201\", function () {",
+								"    pm.response.to.have.status(201);",
+								"});",
+								"",
+								"pm.test(\"Response has vehicleId\", function () {",
+								"    var jsonData = pm.response.json();",
+								"    pm.expect(jsonData).to.be.a('string');",
+								"    // Guardar el vehicleId sin comillas",
+								"    pm.environment.set(\"vehicleId\", jsonData);",
+								"    console.log(\"VehicleId saved: \" + jsonData);",
+								"});"
+							],
+							"type": "text/javascript"
+						}
+					}
+				],
+				"request": {
+					"method": "POST",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"body": {
+						"mode": "raw",
+						"raw": "{\n    \"make\": \"Toyota\",\n    \"model\": \"Corolla\",\n    \"year\": 2023\n}"
+					},
+					"url": {
+						"raw": "{{baseUrl}}/api/vehicles",
+						"host": ["{{baseUrl}}"],
+						"path": ["api", "vehicles"]
+					}
+				}
+				},
+				{
+					"name": "Get Available Vehicles",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response is an array\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/vehicles/available",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "vehicles", "available"]
+						},
+						"description": "Gets all available vehicles for rent"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Vehicle - Invalid Year",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"make\": \"Toyota\",\n    \"model\": \"Corolla\",\n    \"year\": 1800\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/vehicles",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "vehicles"]
+						},
+						"description": "Validation test - year too low"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Rentals",
+			"item": [
+				{
+					"name": "Create Rental",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Response has rentalId\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.a('string');",
+									"    pm.environment.set(\"rentalId\", jsonData);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Set start date to tomorrow",
+									"var tomorrow = new Date();",
+									"tomorrow.setDate(tomorrow.getDate() + 1);",
+									"pm.environment.set(\"startDate\", tomorrow.toISOString());"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"vehicleId\": \"{{vehicleId}}\",\n    \"customerId\": \"customer-001\",\n    \"startDate\": \"{{startDate}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/rentals",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "rentals"]
+						},
+						"description": "Creates a new rental (rent a vehicle)"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Rental - Vehicle Not Found",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"vehicleId\": \"00000000-0000-0000-0000-000000000000\",\n    \"customerId\": \"customer-001\",\n    \"startDate\": \"{{startDate}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/rentals",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "rentals"]
+						},
+						"description": "Error test - vehicle not found"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Rental - Past Date",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Set start date to yesterday",
+									"var yesterday = new Date();",
+									"yesterday.setDate(yesterday.getDate() - 1);",
+									"pm.environment.set(\"pastDate\", yesterday.toISOString());"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"vehicleId\": \"{{vehicleId}}\",\n    \"customerId\": \"customer-002\",\n    \"startDate\": \"{{pastDate}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/rentals",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "rentals"]
+						},
+						"description": "Validation test - start date in the past"
+					},
+					"response": []
+				},
+				{
+					"name": "Return Vehicle",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 204\", function () {",
+									"    pm.response.to.have.status(204);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/rentals/{{rentalId}}/return",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "rentals", "{{rentalId}}", "return"]
+						},
+						"description": "Returns a rented vehicle"
+					},
+					"response": []
+				},
+				{
+					"name": "Return Vehicle - Not Found",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/rentals/00000000-0000-0000-0000-000000000000/return",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "rentals", "00000000-0000-0000-0000-000000000000", "return"]
+						},
+						"description": "Error test - rental not found"
+					},
+					"response": []
+				},
+				{
+					"name": "Return Vehicle - Already Returned",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 409\", function () {",
+									"    pm.response.to.have.status(409);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/rentals/{{rentalId}}/return",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "rentals", "{{rentalId}}", "return"]
+						},
+						"description": "Error test - rental already returned"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Health",
+			"item": [
+				{
+					"name": "Health Check",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/health",
+							"host": ["{{baseUrl}}"],
+							"path": ["health"]
+						},
+						"description": "Health check endpoint"
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:5111",
+			"type": "string"
+		}
+	]
+}
